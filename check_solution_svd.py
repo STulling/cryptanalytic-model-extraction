@@ -116,7 +116,8 @@ for i in range(len(A1)):
     print("\tAt layer", i, "loss is bounded by", largest_value)
 
 print('Upper bound on number of bits of precision in the output through SVD', -np.log(largest_value)/np.log(2))
-
+with open('res/out.txt', 'a+') as f:
+    f.write(f'{-np.log(largest_value)/np.log(2)};\n')
 print("\nFinally estimate it through random samples to make sure we haven't made a mistake") # not that that would ever happen
 def loss(x):
     return np.abs(run(x, A=A1, B=B1)-run(x, A=A2, B=B2))

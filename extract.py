@@ -40,9 +40,9 @@ def run_full_attack():
 
     extracted_normals = []
     extracted_biases = []
-    
-    known_T = KnownT(extracted_normals, extracted_biases)        
-    
+
+    known_T = KnownT(extracted_normals, extracted_biases)
+
     for layer_num in range(0,len(A)-1):
         # For each layer of the network ...
 
@@ -51,7 +51,7 @@ def run_full_attack():
 
         # Extract weights corresponding to those critical points
         extracted_normal, extracted_bias, mask = layer_recovery.compute_layer_values(critical_points,
-                                                                                     known_T, 
+                                                                                     known_T,
                                                                                      layer_num)
 
         # Report how well we're doing
@@ -83,12 +83,12 @@ def run_full_attack():
                 extracted_sign, _ = sign_recovery.solve_layer_sign(known_T, extracted_normal, extracted_bias, critical_points,
                                                                    layer_num,
                                                                    l1_mask=np.int32(np.sign(mask)))
-                
+
         else:
             if layer_num == len(A)-2:
                 print("Solve final two")
                 break
-            
+
             extracted_sign, _ = sign_recovery.solve_layer_sign(known_T, extracted_normal, extracted_bias, critical_points,
                                                                layer_num,
                                                                l1_mask=np.int32(np.sign(mask)))
@@ -108,11 +108,14 @@ def run_full_attack():
 
         extracted_normals.append(extracted_normal)
         extracted_biases.append(extracted_bias)
-    
+
     known_T = KnownT(extracted_normals, extracted_biases)
 
     for a,b in sorted(query_count_at.items(),key=lambda x: -x[1]):
         print('count', b, '\t', 'line:', a, ':', self_lines[a-1].strip())
+
+    with open('res/out.txt', 'a+') as f:
+        f.write(f'{len(SAVED_QUERIES)};')
 
     # And then finish up
     if len(extracted_normals) == len(sizes)-2:
@@ -123,7 +126,8 @@ def run_full_attack():
     else:
         print("Solve final two")
         solve_final_two_layers(known_T, extracted_normal, extracted_bias)
-
+    with open('res/out.txt', 'a+') as f:
+        f.write(f'{len(SAVED_QUERIES)};')
 
 def solve_final_two_layers(known_T, known_A0, known_B0):
     ## Recover the final two layers through brute forcing signs, then least squares
@@ -167,7 +171,7 @@ def solve_final_two_layers(known_T, known_A0, known_B0):
 
     print("Attempts at solution:", (solution_attempts), 'out of', total_attempts)
     print("Took", end_time-start_time, 'seconds')
-    
+
     std = np.std([x[0] for x in scores])
     print('std',std)
     print('median', np.median([x[0] for x in scores]))
@@ -189,7 +193,7 @@ def solve_final_layer(known_T, inputs, outputs):
             print()
             print("LAYER", i)
             check_quality(i, normal, bias)
-    
+
     outputs = run(inputs)
     hidden = known_T.forward(inputs, with_relu=True)
 
@@ -203,7 +207,7 @@ def solve_final_layer(known_T, inputs, outputs):
     Bt = known_T.B+[vector[-1]]
 
     print("SAVING", "/tmp/extracted-%s.p"%"-".join(map(str,sizes)))
-    
+
     pickle.dump([At,
                  Bt],
                 open("/tmp/extracted-%s.p"%"-".join(map(str,sizes)),"wb"))
@@ -224,7 +228,7 @@ def solve_final_layer(known_T, inputs, outputs):
     print("\n\n")
 
     print("Finally we are done.\n")
-    
+
     print('Maximum logit loss on the unit sphere',np.max(np.abs(ls)))
     print("\nfin")
 
@@ -233,19 +237,14 @@ def set_timeout(time):
         print("Timed out.")
         print("I assume something bad happened. Did it?")
         exit(2)
-    
-    signal.signal(signal.SIGALRM, handler)
-    
-    # Set a 1 hour timelimit for experiments.
-    signal.alarm(time)
-    
-        
+
+
 if __name__ == "__main__":
     # We use mp.Pool to make some of our operations faster
     # Figure out how many threads we can use and create the pool now
     pool.append(mp.Pool(MPROC_THREADS//4))
 
-    set_timeout(60*60)
+    # set_timeout(60*60)
 
     print("START EXTRACTION ATTACK")
     # Make it so

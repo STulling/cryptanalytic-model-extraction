@@ -101,3 +101,5 @@ for i in range(100):
         
 # Save our amazing model.
 onp.save("models/" + str(seed) + "_" + "-".join(map(str,sizes)), params)
+with open('res/out.txt', 'a+') as f:
+    f.write(f'{"-".join(map(str,sizes))};')
