@@ -4,36 +4,25 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     https://www.apache.org/licenses/LICENSE-2.0
+#	  https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import sys
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = ''
-#import jax
-#import jax.experimental.optimizers
-#import jax.numpy as jnp
+import numpy as np
+from collections import OrderedDict
 from torch import nn
 import torch
 import torch.optim as optim
-import numpy as np
-from collections import OrderedDict
+import torchvision
 
-activation_function_dict = {"relu": nn.ReLU, "elu": nn.ELU, "leaky": nn.LeakyReLU}
-
-def matmul(a,b,c,np=jnp):
-    if c is None:
-        c = np.zeros(1)
-
-    return np.dot(a,b)+c
-
-class SimpleClassifier:   
-    def __init__(self, sizes, activation):
+class SimpleClassifier(nn.Module):
+	def __init__(self, sizes, activation):
 		super().__init__()
 		layers = OrderedDict()
 		for i in range(len(sizes) - 1):
@@ -43,64 +32,54 @@ class SimpleClassifier:
 		
 	def forward(self,x):
 		return self.model.forward(x)
-    
-    #def getParams(self):
-    #    return [self.weights, self.biases]
-        
-    #def loss(self, params, inputs, targets):
-    #    logits = self.run(inputs, params[0], params[1])
-    #    # L2 loss is best loss
-    #    res = (targets-logits.flatten())**2
-    #    return jnp.mean(res)
-        
-    
-@jax.jit
-def update(i, opt_state, batch_x, batch_y):
-    params = get_params(opt_state)
-    return opt_update(i, loss_grad(params, batch_x, batch_y), opt_state)
+
+activation_function_dict = {"relu": nn.ReLU, "elu": nn.ELU, "leaky": nn.LeakyReLU}
 
 sizes = list(map(int,sys.argv[1].split("-")))
 seed = int(sys.argv[2]) if len(sys.argv) > 2 else 42 # for luck
-activation_function = activation_function_dict[sys.argv[3]] if len(sys.argv) > 3 else nn.Relu
+activation_argument = sys.argv[3].lower()
+activation_function = activation_function_dict[activation_argument] if len(sys.argv) > 3 else nn.ReLU
 
 model = SimpleClassifier(sizes, activation_function)
 
-
 SAMPLES = 20
 np.random.seed(seed)
-X = np.random.normal(size=(SAMPLES, sizes[0]))
-Y = np.array(np.random.normal(size=SAMPLES)>0,dtype=np.float32)
-
-
+criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr = 0.0003)
+batch_size_train = 4
 
+transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),torchvision.transforms.Lambda(lambda x: torch.flatten(x))])
+trainset = torchvision.datasets.MNIST(root='./files', train=True, download=False, transform=transform)
+trainloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size_train,shuffle=True, num_workers=0)
 
-init, opt_update, get_params = jax.experimental.optimizers.adam(3e-4)
+#X = torch.tensor(np.array(np.random.normal(size=(SAMPLES, sizes[0])),dtype=np.float32))
+#Y = torch.tensor(np.array(np.random.normal(size=SAMPLES)>0,dtype=np.float32))
 
-
-loss_grad = jax.grad(model.loss)
-params = model.getParams()
-opt_state = init(params)
-
-BS = 4
-
-# Train loop.
-
-step = 0
-for i in range(100):
-    if i%10 == 0:
-        print('loss', model.loss(params, X, Y))
-
-    for j in range(0,SAMPLES,BS):
-        batch_x = X[j:j+BS]
-        batch_y = Y[j:j+BS]
-
-        # gradient descent!
-        opt_state = update(step, opt_state, batch_x, batch_y)
-        params = get_params(opt_state)
-
-        step += 1
-        
+for epoch in range(10):	# loop over the dataset multiple times
+	running_loss = 0.0
+	for i, (x,y) in enumerate(trainloader, 0):
+	#for (x,y) in zip(X, Y):
+		# get the inputs; data is a list of [inputs, labels]
+		inputs = x
+		#print(x.shape)
+		#print(inputs[1:10])
+		labels = y*0.1
+		# zero the parameter gradients
+		optimizer.zero_grad()
+		# forward + backward + optimize
+		outputs = model(inputs)
+		loss = criterion(outputs, labels)
+		loss.backward()
+		optimizer.step()
+		# print statistics
+		running_loss += loss.item()
+		if i % 2000 == 1999:    # print every 2000 mini-batches
+			print('[%d, %5d] loss: %.3f' %
+				  (epoch + 1, i + 1, running_loss / 2000))
+			running_loss = 0.0
+print('Finished Training')
+	
 # Save our amazing model.
-torch.save(model, "./models/" + str(seed) + "_" + "-".join(map(str,sizes)) + "_" + activation_function)
-#np.save("./models/" + str(seed) + "_" + "-".join(map(str,sizes)), params)
+PATH = "./models/"
+file = str(seed) + "_" + "-".join(map(str,sizes)) + "_" + str(activation_argument) + ".pth"
+torch.save(model, os.path.join(PATH,file))
