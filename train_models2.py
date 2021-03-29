@@ -52,26 +52,16 @@ transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),to
 trainset = torchvision.datasets.MNIST(root='./files', train=True, download=False, transform=transform)
 trainloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size_train,shuffle=True, num_workers=0)
 
-#X = torch.tensor(np.array(np.random.normal(size=(SAMPLES, sizes[0])),dtype=np.float32))
-#Y = torch.tensor(np.array(np.random.normal(size=SAMPLES)>0,dtype=np.float32))
-
-for epoch in range(10):	# loop over the dataset multiple times
+for epoch in range(10):	
 	running_loss = 0.0
 	for i, (x,y) in enumerate(trainloader, 0):
-	#for (x,y) in zip(X, Y):
-		# get the inputs; data is a list of [inputs, labels]
 		inputs = x
-		#print(x.shape)
-		#print(inputs[1:10])
 		labels = y*0.1
-		# zero the parameter gradients
 		optimizer.zero_grad()
-		# forward + backward + optimize
 		outputs = model(inputs)
 		loss = criterion(outputs, labels)
 		loss.backward()
 		optimizer.step()
-		# print statistics
 		running_loss += loss.item()
 		if i % 2000 == 1999:    # print every 2000 mini-batches
 			print('[%d, %5d] loss: %.3f' %
