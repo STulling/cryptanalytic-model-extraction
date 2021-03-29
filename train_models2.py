@@ -35,10 +35,13 @@ class SimpleClassifier(nn.Module):
 
 activation_function_dict = {"relu": nn.ReLU, "elu": nn.ELU, "leaky": nn.LeakyReLU}
 
-sizes = list(map(int,sys.argv[1].split("-")))
-seed = int(sys.argv[2]) if len(sys.argv) > 2 else 42 # for luck
-activation_argument = sys.argv[3].lower()
-activation_function = activation_function_dict[activation_argument] if len(sys.argv) > 3 else nn.ReLU
+#Example sys.args: 784-128-1 relu 23
+
+PATH = "./models/" 
+sizes = list(map(int,sys.argv[1].split("-"))) 
+activation_argument = sys.argv[2].lower() #
+seed = int(sys.argv[3]) if len(sys.argv) > 3 else 42 
+activation_function = activation_function_dict[activation_argument] if len(sys.argv) > 2 else nn.ReLU
 
 model = SimpleClassifier(sizes, activation_function)
 
@@ -48,10 +51,12 @@ criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr = 0.0003)
 batch_size_train = 4
 
+#Transfor the mnist dataset.
 transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),torchvision.transforms.Lambda(lambda x: torch.flatten(x))])
 trainset = torchvision.datasets.MNIST(root='./files', train=True, download=False, transform=transform)
 trainloader = torch.utils.data.DataLoader(trainset,batch_size=batch_size_train,shuffle=True, num_workers=0)
 
+#Training
 for epoch in range(10):	
 	running_loss = 0.0
 	for i, (x,y) in enumerate(trainloader, 0):
@@ -63,13 +68,12 @@ for epoch in range(10):
 		loss.backward()
 		optimizer.step()
 		running_loss += loss.item()
-		if i % 2000 == 1999:    # print every 2000 mini-batches
+		if i % 2000 == 1999:
 			print('[%d, %5d] loss: %.3f' %
 				  (epoch + 1, i + 1, running_loss / 2000))
 			running_loss = 0.0
 print('Finished Training')
 	
 # Save our amazing model.
-PATH = "./models/"
 file = str(seed) + "_" + "-".join(map(str,sizes)) + "_" + str(activation_argument) + ".pth"
 torch.save(model, os.path.join(PATH,file))
