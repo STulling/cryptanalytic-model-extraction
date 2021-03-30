@@ -102,6 +102,5 @@ for i in range(100):
 
         step += 1
 
-print(params)
 # Save our amazing model.
 onp.save("./models/" + str(seed) + "_" + "-".join(map(str, sizes)), params)

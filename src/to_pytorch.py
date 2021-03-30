@@ -5,6 +5,21 @@ import torch
 from torch import nn
 
 
+class SimpleClassifier(nn.Module):
+    def __init__(self, sizes, activation):
+        super().__init__()
+        layers = OrderedDict()
+        for i in range(len(sizes) - 2):
+            layers.update({f"fc{i}": nn.Linear(sizes[i], sizes[i + 1])})
+            layers.update({f"activation{i}": activation()})
+
+        layers.update({f"fc{len(sizes) - 2}": nn.Linear(sizes[len(sizes) - 2], sizes[len(sizes) - 1])})
+        self.model = nn.Sequential(OrderedDict(layers))
+
+    def forward(self, x):
+        return self.model.forward(x)
+
+
 def to_pytorch(weights, biases, sizes, activation=nn.ReLU):
     model = SimpleClassifier(sizes, activation)
     state_dict = OrderedDict()
@@ -20,19 +35,21 @@ def to_pytorch(weights, biases, sizes, activation=nn.ReLU):
     return model
 
 
-class SimpleClassifier(nn.Module):
-    def __init__(self, sizes, activation):
-        super().__init__()
-        layers = OrderedDict()
-        for i in range(len(sizes) - 2):
-            layers.update({f"fc{i}": nn.Linear(sizes[i], sizes[i + 1])})
-            layers.update({f"activation{i}": activation()})
+def load_model(path):
+    return torch.load(path)
 
-        layers.update({f"fc{len(sizes) - 2}": nn.Linear(sizes[len(sizes) - 2], sizes[len(sizes) - 1])})
-        self.model = nn.Sequential(OrderedDict(layers))
 
-    def forward(self, x):
-        return self.model.forward(x)
+def from_pytorch(model):
+    state_dict = model.state_dict()
+    weights = np.array([None] * (len(state_dict) // 2))
+    biases = np.array([None] * (len(state_dict) // 2))
+    sizes = []
+    for i in range(len(state_dict) // 2):
+        weights[i] = (state_dict.get(f"model.fc{i}.weight").numpy().astype('float32').transpose())
+        biases[i] = (state_dict.get(f"model.fc{i}.bias").numpy().astype('float32').transpose())
+        sizes.append(len(weights[i]))
+
+    return weights, biases, sizes + [1]
 
 
 if __name__ == "__main__":
@@ -63,6 +80,11 @@ if __name__ == "__main__":
 
 
     model = to_pytorch(__cheat_A, __cheat_B, sizes)
+    torch.save(model, '../test')
+    m = torch.load('../test')
+
+    weights, biases, sizes = from_pytorch(m)
+    print(sizes)
 
     x = [-108, -56, -78, 75, 97, 10, -12, 85, 99, -145]
     y_old = run(x, __cheat_A, __cheat_B)

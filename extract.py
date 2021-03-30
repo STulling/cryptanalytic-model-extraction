@@ -32,7 +32,6 @@ import src.layer_recovery as layer_recovery
 import src.sign_recovery as sign_recovery
 from src.global_vars import *
 
-
 logger = Logger()
 
 #####################################################################
