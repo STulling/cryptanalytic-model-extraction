@@ -39,8 +39,7 @@ def load_model(path):
     return torch.load(path)
 
 
-def from_pytorch(model):
-    state_dict = model.state_dict()
+def from_pytorch(state_dict):
     weights = np.array([None] * (len(state_dict) // 2))
     biases = np.array([None] * (len(state_dict) // 2))
     sizes = []
@@ -80,7 +79,7 @@ if __name__ == "__main__":
 
 
     model = to_pytorch(__cheat_A, __cheat_B, sizes)
-    torch.save(model, '../test')
+    torch.save(model.state_dict(), '../test')
     m = torch.load('../test')
 
     weights, biases, sizes = from_pytorch(m)

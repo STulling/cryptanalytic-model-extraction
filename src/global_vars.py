@@ -22,7 +22,7 @@ import numpy as np
 #####################################################################
 from jax.config import config
 
-from src.to_pytorch import from_pytorch, load_model
+from src.to_pytorch import from_pytorch, load_model, to_pytorch
 
 config.update("jax_enable_x64", True)
 
@@ -32,9 +32,9 @@ np.random.seed(seed)
 random.seed(seed)
 
 # sizes is the number of relus in each layer
-model = load_model(sys.argv[1])
+__cheat_A, __cheat_B, sizes = from_pytorch(load_model(sys.argv[1]))
 
-__cheat_A, __cheat_B, sizes = from_pytorch(model)#list(map(int,sys.argv[1].split("-")))
+model = to_pytorch(__cheat_A, __cheat_B, sizes)#list(map(int,sys.argv[1].split("-")))
 dimensions = [tuple([x]) for x in sizes]
 neuron_count = sizes
 
