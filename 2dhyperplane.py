@@ -14,18 +14,41 @@ def plot(net):
 	
 	in_tensor = torch.cat((xx.reshape((-1,1)), yy.reshape((-1,1))), dim=1)
 
+	result = torch.zeros((xx.shape[0], yy.shape[1], 3))
+	result2 = torch.zeros((xx.shape[0], yy.shape[1], 3))
+	fig, axes = plt.subplots(nrows=2, ncols=len(list(net.parameters())[0].data) + 2, figsize=(9, 3))
+	for i in range(len(list(net.parameters())[0].data)):
+		weight = list(net.parameters())[0].data[i]
+		bias = list(net.parameters())[1].data[i]
+		z = nn.functional.relu_(torch.matmul(in_tensor, weight) + bias)
+		z = z.reshape(xx.shape)
+		result[:, :, i] = z
+		result2[:, :, i] = (z > 0)
+		#axes[i].contourf(xx, yy, z, cmap=plt.cm.coolwarm)
+		axes[0, i].imshow(z)
+		axes[0, i].set_xlabel('x0')
+		axes[0, i].set_ylabel('x1')
+		axes[1, i].imshow((z > 0))
+		axes[1, i].set_xlabel('x0')
+		axes[1, i].set_ylabel('x1')
+		
+	#z = net.forward(in_tensor)
+	#z = torch.argmax(z, dim=1)
+	#z = z.reshape(xx.shape)
+	axes[0,len(list(net.parameters())[0].data)].set_ylabel('x1')
+	axes[0,len(list(net.parameters())[0].data)].set_xlabel('x0')
+	axes[0,len(list(net.parameters())[0].data)].imshow(result)
+	
+	axes[1,len(list(net.parameters())[0].data)].set_ylabel('x1')
+	axes[1,len(list(net.parameters())[0].data)].set_xlabel('x0')
+	axes[1,len(list(net.parameters())[0].data)].imshow(result2)
+	
 	z = net.forward(in_tensor)
 	z = torch.argmax(z, dim=1)
 	z = z.reshape(xx.shape)
-	plt.contourf(xx, yy, z, cmap=plt.cm.coolwarm)
-	
-	#weight = list(net.parameters())[0].data[0].numpy()
-	#bias = list(net.parameters())[1].data[0].numpy()
-	#x = np.linspace(-1,1,100)
-	#y = [np.polyval(weight, [x, y]) for x, y in zip(xx, yy)]
-	#plt.plot(x,y)
-	plt.xlabel('x0')
-	plt.ylabel('x1')
+	axes[0,len(list(net.parameters())[0].data) + 1].set_ylabel('x1')
+	axes[0,len(list(net.parameters())[0].data) + 1].set_xlabel('x0')
+	axes[0,len(list(net.parameters())[0].data) + 1].imshow(z)
 	
 	plt.show()
 
