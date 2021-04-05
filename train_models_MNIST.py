@@ -35,7 +35,7 @@ class SimpleClassifier(nn.Module):
 
 activation_function_dict = {"relu": nn.ReLU, "elu": nn.ELU, "leaky": nn.LeakyReLU}
 
-#Example sys.args: 784-128-1 relu 23
+#Example sys.args: 784-128-1 relu 42
 
 PATH = "./models/" 
 sizes = list(map(int,sys.argv[1].split("-"))) 
@@ -76,4 +76,4 @@ print('Finished Training')
 	
 # Save our amazing model.
 file = str(seed) + "_" + "-".join(map(str,sizes)) + "_" + str(activation_argument) + ".pth"
-torch.save(model, os.path.join(PATH,file))
+torch.save(model.state_dict(), os.path.join(PATH,file))
