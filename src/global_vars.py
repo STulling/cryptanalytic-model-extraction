@@ -12,16 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import multiprocessing as mp
-import numpy as np
 import random
+import sys
 
+import numpy as np
 #####################################################################
 ## GLOBAL VARIABLES. I am a bad person and use globals. I'm sorry. ##
 #####################################################################
-
 from jax.config import config
+
+from src.to_pytorch import from_pytorch, load_model, to_pytorch
+
 config.update("jax_enable_x64", True)
 
 # To ensure reproducible results to help debugging, set seeds for randomness.
@@ -30,18 +32,16 @@ np.random.seed(seed)
 random.seed(seed)
 
 # sizes is the number of relus in each layer
-sizes = list(map(int,sys.argv[1].split("-")))
+__cheat_A, __cheat_B, sizes = from_pytorch(load_model(sys.argv[1]))
+
+model = to_pytorch(__cheat_A, __cheat_B, sizes)#list(map(int,sys.argv[1].split("-")))
 dimensions = [tuple([x]) for x in sizes]
 neuron_count = sizes
 
 DIM = sizes[0]
 
-__cheat_A, __cheat_B = np.load("models/" + str(seed) + "_" + "-".join(map(str,sizes))+".npy", allow_pickle=True)
-
 # In order to help debugging, we're going to log what lines of code
 # cause lots of queries to be generated. Use this to improve things.
-query_count = 0
-query_count_at = {}
 
 # HYPERPARAMETERS. Change these at your own risk. It may all die.
 
