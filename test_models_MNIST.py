@@ -18,7 +18,8 @@ class SimpleClassifier(nn.Module):
 		return self.model.forward(x)
 
 PATH = sys.argv[1] #example: "./models/42_784-128-1_relu.pth"
-model = torch.load(PATH)
+#model = SimpleClassifier(*args, **kwargs)
+model.load_state_dict(torch.load(PATH))
 
 transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),torchvision.transforms.Lambda(lambda x: torch.flatten(x))])
 testset = torchvision.datasets.MNIST(root='./files', train=False, download=False, transform=transform)
